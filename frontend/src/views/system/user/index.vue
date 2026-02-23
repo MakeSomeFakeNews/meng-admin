@@ -1,8 +1,8 @@
 <template>
-  <div>
-    <!-- 搜索栏 -->
-    <a-card :bordered="false" style="margin-bottom: 16px; border-radius: 8px">
-      <a-form layout="inline" :model="queryParams">
+  <PageContainer>
+    <!-- 搜索区域 -->
+    <template #search>
+      <SearchCard :loading="loading" @search="handleSearch" @reset="handleReset">
         <a-form-item label="用户名">
           <a-input v-model:value="queryParams.username" placeholder="请输入用户名" allow-clear />
         </a-form-item>
@@ -15,141 +15,110 @@
             <a-select-option :value="0">禁用</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="loadData" :loading="loading">
-              <SearchOutlined /> 搜索
-            </a-button>
-            <a-button @click="resetQuery">
-              <ReloadOutlined /> 重置
-            </a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+      </SearchCard>
+    </template>
 
-    <!-- 操作区 + 表格 -->
-    <a-card :bordered="false" style="border-radius: 8px">
-      <div style="margin-bottom: 16px">
-        <a-button type="primary" v-permission="'sys:user:add'" @click="openAddModal">
-          <PlusOutlined /> 新增用户
-        </a-button>
-      </div>
+    <!-- 工具栏 -->
+    <template #toolbar>
+      <a-button type="primary" v-permission="'sys:user:add'" @click="openAddModal">
+        <PlusOutlined /> 新增用户
+      </a-button>
+    </template>
 
-      <a-table
-        :columns="columns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === 1 ? 'success' : 'error'">
-              {{ record.status === 1 ? '正常' : '禁用' }}
-            </a-tag>
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" v-permission="'sys:user:update'" @click="openEditModal(record)">
-                编辑
-              </a-button>
-              <a-button type="link" size="small" v-permission="'sys:user:assign-role'" @click="openRoleModal(record)">
-                分配角色
-              </a-button>
-              <a-button type="link" size="small" v-permission="'sys:user:reset-pwd'" @click="openResetPwdModal(record)">
-                重置密码
-              </a-button>
-              <span v-permission="'sys:user:delete'">
-                <a-popconfirm
-                  title="确定删除该用户吗？"
-                  @confirm="handleDelete(record.id)"
-                >
-                  <a-button type="link" size="small" danger>删除</a-button>
-                </a-popconfirm>
-              </span>
-            </a-space>
-          </template>
+    <!-- 表格 -->
+    <a-table
+      :columns="columns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="pagination"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <StatusTag :value="record.status" />
         </template>
-      </a-table>
-    </a-card>
+        <template v-if="column.key === 'action'">
+          <TableActions :actions="tableActions" :record="record" />
+        </template>
+      </template>
+    </a-table>
+  </PageContainer>
 
-    <!-- 新增/编辑用户 Modal -->
-    <a-modal
-      v-model:open="modalVisible"
-      :title="isEdit ? '编辑用户' : '新增用户'"
-      :confirm-loading="submitLoading"
-      @ok="handleSubmit"
-      @cancel="resetForm"
-      width="560px"
-    >
-      <a-form :model="formData" :rules="formRules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
-        <a-form-item label="用户名" name="username" v-if="!isEdit">
-          <a-input v-model:value="formData.username" placeholder="请输入用户名（3-32个字符）" />
-        </a-form-item>
-        <a-form-item label="密码" name="password" v-if="!isEdit">
-          <a-input-password v-model:value="formData.password" placeholder="请输入密码（至少8位）" />
-        </a-form-item>
-        <a-form-item label="昵称" name="nickname">
-          <a-input v-model:value="formData.nickname" placeholder="请输入昵称" />
-        </a-form-item>
-        <a-form-item label="邮箱" name="email">
-          <a-input v-model:value="formData.email" placeholder="请输入邮箱" />
-        </a-form-item>
-        <a-form-item label="手机号" name="phone">
-          <a-input v-model:value="formData.phone" placeholder="请输入手机号" />
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-radio-group v-model:value="formData.status">
-            <a-radio :value="1">正常</a-radio>
-            <a-radio :value="0">禁用</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+  <!-- 新增/编辑用户 Modal -->
+  <a-modal
+    v-model:open="modalVisible"
+    :title="isEdit ? '编辑用户' : '新增用户'"
+    :confirm-loading="submitLoading"
+    @ok="handleSubmit"
+    @cancel="resetForm"
+    width="560px"
+  >
+    <a-form :model="formData" :rules="formRules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+      <a-form-item label="用户名" name="username" v-if="!isEdit">
+        <a-input v-model:value="formData.username" placeholder="请输入用户名（3-32个字符）" />
+      </a-form-item>
+      <a-form-item label="密码" name="password" v-if="!isEdit">
+        <a-input-password v-model:value="formData.password" placeholder="请输入密码（至少8位）" />
+      </a-form-item>
+      <a-form-item label="昵称" name="nickname">
+        <a-input v-model:value="formData.nickname" placeholder="请输入昵称" />
+      </a-form-item>
+      <a-form-item label="邮箱" name="email">
+        <a-input v-model:value="formData.email" placeholder="请输入邮箱" />
+      </a-form-item>
+      <a-form-item label="手机号" name="phone">
+        <a-input v-model:value="formData.phone" placeholder="请输入手机号" />
+      </a-form-item>
+      <a-form-item label="状态" name="status">
+        <a-radio-group v-model:value="formData.status">
+          <a-radio :value="1">正常</a-radio>
+          <a-radio :value="0">禁用</a-radio>
+        </a-radio-group>
+      </a-form-item>
+    </a-form>
+  </a-modal>
 
-    <!-- 分配角色 Modal -->
-    <a-modal
-      v-model:open="roleModalVisible"
-      title="分配角色"
-      :confirm-loading="submitLoading"
-      @ok="handleAssignRoles"
-      @cancel="roleModalVisible = false"
-    >
-      <a-checkbox-group v-model:value="selectedRoleIds" style="display: flex; flex-direction: column; gap: 8px">
-        <a-checkbox v-for="role in allRoles" :key="role.id" :value="role.id">
-          {{ role.roleName }} ({{ role.roleCode }})
-        </a-checkbox>
-      </a-checkbox-group>
-    </a-modal>
+  <!-- 分配角色 Modal -->
+  <a-modal
+    v-model:open="roleModalVisible"
+    title="分配角色"
+    :confirm-loading="submitLoading"
+    @ok="handleAssignRoles"
+    @cancel="roleModalVisible = false"
+  >
+    <a-checkbox-group v-model:value="selectedRoleIds" class="role-checkbox-group">
+      <a-checkbox v-for="role in allRoles" :key="role.id" :value="role.id">
+        {{ role.roleName }} ({{ role.roleCode }})
+      </a-checkbox>
+    </a-checkbox-group>
+  </a-modal>
 
-    <!-- 重置密码 Modal -->
-    <a-modal
-      v-model:open="resetPwdModalVisible"
-      title="重置密码"
-      :confirm-loading="submitLoading"
-      @ok="handleResetPassword"
-      @cancel="resetPwdModalVisible = false"
-    >
-      <a-form :model="resetPwdData" ref="resetPwdFormRef">
-        <a-form-item
-          label="新密码"
-          name="newPassword"
-          :rules="[{ required: true, message: '请输入新密码' }, { min: 8, message: '密码至少8位' }]"
-        >
-          <a-input-password v-model:value="resetPwdData.newPassword" placeholder="请输入新密码（至少8位）" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </div>
+  <!-- 重置密码 Modal -->
+  <a-modal
+    v-model:open="resetPwdModalVisible"
+    title="重置密码"
+    :confirm-loading="submitLoading"
+    @ok="handleResetPassword"
+    @cancel="resetPwdModalVisible = false"
+  >
+    <a-form :model="resetPwdData" ref="resetPwdFormRef">
+      <a-form-item
+        label="新密码"
+        name="newPassword"
+        :rules="[{ required: true, message: '请输入新密码' }, { min: 8, message: '密码至少8位' }]"
+      >
+        <a-input-password v-model:value="resetPwdData.newPassword" placeholder="请输入新密码（至少8位）" />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { FormInstance, Rule, TablePaginationConfig } from 'ant-design-vue/es'
-import { SearchOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 import {
   getUserPage,
   saveUser,
@@ -162,6 +131,10 @@ import {
 import { getAllRoles } from '@/api/role'
 import type { UserInfo, UserQueryParams } from '@/types/user'
 import type { RoleInfo } from '@/types/role'
+import type { TableAction } from '@/components/TableActions/index.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 // 查询参数
 const queryParams = reactive<UserQueryParams>({
@@ -186,6 +159,32 @@ const columns = [
   { title: '操作', key: 'action', width: 280 }
 ]
 
+// 操作列按钮配置
+const tableActions: TableAction[] = [
+  {
+    label: '编辑',
+    hidden: () => !authStore.hasPermission('sys:user:update'),
+    onClick: (record: UserInfo) => openEditModal(record)
+  },
+  {
+    label: '分配角色',
+    hidden: () => !authStore.hasPermission('sys:user:assign-role'),
+    onClick: (record: UserInfo) => openRoleModal(record)
+  },
+  {
+    label: '重置密码',
+    hidden: () => !authStore.hasPermission('sys:user:reset-pwd'),
+    onClick: (record: UserInfo) => openResetPwdModal(record)
+  },
+  {
+    label: '删除',
+    danger: true,
+    confirm: '确定删除该用户吗？',
+    hidden: () => !authStore.hasPermission('sys:user:delete'),
+    onClick: (record: UserInfo) => handleDelete(record.id)
+  }
+]
+
 async function loadData() {
   loading.value = true
   try {
@@ -201,7 +200,12 @@ async function loadData() {
   }
 }
 
-function resetQuery() {
+function handleSearch() {
+  pagination.current = 1
+  loadData()
+}
+
+function handleReset() {
   queryParams.username = ''
   queryParams.nickname = ''
   queryParams.status = null
@@ -344,3 +348,11 @@ async function handleResetPassword() {
 
 onMounted(() => loadData())
 </script>
+
+<style scoped>
+.role-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+</style>

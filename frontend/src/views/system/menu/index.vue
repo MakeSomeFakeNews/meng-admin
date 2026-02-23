@@ -1,319 +1,271 @@
 <template>
-  <div class="menu-page">
-    <a-card :bordered="false" class="main-card">
-      <!-- 操作栏 -->
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <a-button type="primary" v-permission="'sys:menu:add'" @click="openAddModal(0)">
-            <template #icon><PlusOutlined /></template>
-            新增菜单
-          </a-button>
-        </div>
-        <div class="toolbar-right">
-          <a-space>
-            <a-tooltip title="展开全部">
-              <a-button @click="expandAll">
-                <template #icon><FullscreenOutlined /></template>
-                展开全部
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="折叠全部">
-              <a-button @click="collapseAll">
-                <template #icon><FullscreenExitOutlined /></template>
-                折叠全部
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="刷新">
-              <a-button :loading="loading" @click="loadData">
-                <template #icon><ReloadOutlined /></template>
-                刷新
-              </a-button>
-            </a-tooltip>
-          </a-space>
-        </div>
+  <PageContainer>
+    <!-- 工具栏 -->
+    <template #toolbar>
+      <div class="toolbar-left">
+        <a-button type="primary" v-permission="'sys:menu:add'" @click="openAddModal(0)">
+          <template #icon><PlusOutlined /></template>
+          新增菜单
+        </a-button>
       </div>
+      <div class="toolbar-right">
+        <a-space>
+          <a-tooltip title="展开全部">
+            <a-button @click="expandAll">
+              <template #icon><FullscreenOutlined /></template>
+              展开全部
+            </a-button>
+          </a-tooltip>
+          <a-tooltip title="折叠全部">
+            <a-button @click="collapseAll">
+              <template #icon><FullscreenExitOutlined /></template>
+              折叠全部
+            </a-button>
+          </a-tooltip>
+          <a-tooltip title="刷新">
+            <a-button :loading="loading" @click="loadData">
+              <template #icon><ReloadOutlined /></template>
+              刷新
+            </a-button>
+          </a-tooltip>
+        </a-space>
+      </div>
+    </template>
 
-      <!-- 表格 -->
-      <a-table
-        :columns="columns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="false"
-        row-key="id"
-        :expanded-row-keys="expandedKeys"
-        @expand="onExpand"
-        class="menu-table"
-      >
-        <template #bodyCell="{ column, record }">
-          <!-- 菜单标题列 -->
-          <template v-if="column.key === 'title'">
-            <div class="menu-title-cell">
-              <component
-                v-if="record.icon && getIconComponent(record.icon)"
-                :is="getIconComponent(record.icon)"
-                class="menu-title-icon"
-              />
-              <span>{{ record.title }}</span>
-            </div>
-          </template>
-
-          <!-- 图标列 -->
-          <template v-if="column.key === 'icon'">
-            <div v-if="record.icon" class="icon-preview-cell">
-              <component
-                v-if="getIconComponent(record.icon)"
-                :is="getIconComponent(record.icon)"
-                class="icon-preview"
-              />
-              <a-tooltip :title="record.icon">
-                <span class="icon-name">{{ record.icon }}</span>
-              </a-tooltip>
-            </div>
-            <span v-else class="text-muted">-</span>
-          </template>
-
-          <!-- 菜单类型列 -->
-          <template v-if="column.key === 'menuType'">
-            <a-tag :color="['blue', 'green', 'orange'][record.menuType]" class="type-tag">
-              {{ ['目录', '菜单', '按钮'][record.menuType] }}
-            </a-tag>
-          </template>
-
-          <!-- 路由路径列 -->
-          <template v-if="column.key === 'path'">
-            <a-tooltip v-if="record.path" :title="record.path">
-              <span class="ellipsis-text">{{ record.path }}</span>
-            </a-tooltip>
-            <span v-else class="text-muted">-</span>
-          </template>
-
-          <!-- 组件路径列 -->
-          <template v-if="column.key === 'component'">
-            <a-tooltip v-if="record.component" :title="record.component">
-              <span class="ellipsis-text code-text">{{ record.component }}</span>
-            </a-tooltip>
-            <span v-else class="text-muted">-</span>
-          </template>
-
-          <!-- 权限标识列 -->
-          <template v-if="column.key === 'permission'">
-            <a-tooltip v-if="record.permission" :title="record.permission">
-              <a-tag color="purple" class="permission-tag">{{ record.permission }}</a-tag>
-            </a-tooltip>
-            <span v-else class="text-muted">-</span>
-          </template>
-
-          <!-- 状态列 -->
-          <template v-if="column.key === 'status'">
-            <a-badge
-              :status="record.status === 1 ? 'success' : 'error'"
-              :text="record.status === 1 ? '正常' : '禁用'"
+    <!-- 表格 -->
+    <a-table
+      :columns="columns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="false"
+      row-key="id"
+      :expanded-row-keys="expandedKeys"
+      @expand="onExpand"
+      class="menu-table"
+    >
+      <template #bodyCell="{ column, record }">
+        <!-- 菜单标题列 -->
+        <template v-if="column.key === 'title'">
+          <div class="menu-title-cell">
+            <component
+              v-if="record.icon && getIconComponent(record.icon)"
+              :is="getIconComponent(record.icon)"
+              class="menu-title-icon"
             />
-          </template>
-
-          <!-- 操作列 -->
-          <template v-if="column.key === 'action'">
-            <a-space size="small">
-              <a-tooltip title="新增子项" v-if="record.menuType !== 2">
-                <a-button
-                  type="link"
-                  size="small"
-                  v-permission="'sys:menu:add'"
-                  @click="openAddModal(record.id)"
-                  class="action-btn add-btn"
-                >
-                  <template #icon><PlusCircleOutlined /></template>
-                  新增
-                </a-button>
-              </a-tooltip>
-              <a-tooltip title="编辑菜单">
-                <a-button
-                  type="link"
-                  size="small"
-                  v-permission="'sys:menu:update'"
-                  @click="openEditModal(record)"
-                  class="action-btn edit-btn"
-                >
-                  <template #icon><EditOutlined /></template>
-                  编辑
-                </a-button>
-              </a-tooltip>
-              <span v-permission="'sys:menu:delete'">
-                <a-popconfirm
-                  title="确定要删除该菜单吗？"
-                  ok-text="确定"
-                  cancel-text="取消"
-                  @confirm="handleDelete(record.id)"
-                >
-                  <a-button
-                    type="link"
-                    size="small"
-                    danger
-                    class="action-btn delete-btn"
-                  >
-                    <template #icon><DeleteOutlined /></template>
-                    删除
-                  </a-button>
-                </a-popconfirm>
-              </span>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-
-    <!-- 菜单表单 Modal -->
-    <a-modal
-      v-model:open="modalVisible"
-      :title="isEdit ? '编辑菜单' : '新增菜单'"
-      :confirm-loading="submitLoading"
-      @ok="handleSubmit"
-      @cancel="resetForm"
-      width="640px"
-      class="menu-modal"
-    >
-      <a-form
-        :model="formData"
-        :rules="formRules"
-        ref="formRef"
-        :label-col="{ span: 5 }"
-        :wrapper-col="{ span: 17 }"
-        class="menu-form"
-      >
-        <a-form-item label="菜单类型" name="menuType">
-          <a-radio-group v-model:value="formData.menuType" button-style="solid">
-            <a-radio-button :value="0">
-              <FolderOutlined /> 目录
-            </a-radio-button>
-            <a-radio-button :value="1">
-              <FileOutlined /> 菜单
-            </a-radio-button>
-            <a-radio-button :value="2">
-              <ApiOutlined /> 按钮
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-
-        <a-form-item label="菜单标题" name="title">
-          <a-input v-model:value="formData.title" placeholder="请输入菜单标题" />
-        </a-form-item>
-
-        <a-form-item label="上级菜单" name="parentId">
-          <a-tree-select
-            v-model:value="formData.parentId"
-            :tree-data="flatMenuTree"
-            :field-names="{ label: 'title', value: 'id', children: 'children' }"
-            placeholder="请选择上级菜单（不选则为顶级）"
-            allow-clear
-            tree-default-expand-all
-            style="width: 100%"
-          />
-        </a-form-item>
-
-        <template v-if="formData.menuType !== 2">
-          <a-form-item label="路由名称" name="name">
-            <a-input v-model:value="formData.name" placeholder="请输入路由 name（唯一标识）" />
-          </a-form-item>
-          <a-form-item label="路由路径" name="path">
-            <a-input v-model:value="formData.path" placeholder="如 /system/user" />
-          </a-form-item>
-        </template>
-
-        <template v-if="formData.menuType === 1">
-          <a-form-item label="组件路径" name="component">
-            <a-input v-model:value="formData.component" placeholder="如 system/user/index（相对 views 目录，不含 .vue）" />
-          </a-form-item>
-        </template>
-
-        <!-- 图标选择器（目录和菜单显示） -->
-        <a-form-item label="菜单图标" name="icon" v-if="formData.menuType !== 2">
-          <div class="icon-selector-wrapper">
-            <div class="icon-input-row">
-              <div class="icon-current-preview">
-                <component
-                  v-if="formData.icon && getIconComponent(formData.icon)"
-                  :is="getIconComponent(formData.icon)"
-                  class="icon-current"
-                />
-                <QuestionCircleOutlined v-else class="icon-current icon-placeholder" />
-              </div>
-              <a-input
-                v-model:value="formData.icon"
-                placeholder="请输入或选择图标名"
-                style="flex: 1"
-                allow-clear
-              />
-              <a-button type="default" @click="openIconPicker" class="icon-pick-btn">
-                <template #icon><AppstoreOutlined /></template>
-                选择图标
-              </a-button>
-            </div>
+            <span>{{ record.title }}</span>
           </div>
-        </a-form-item>
+        </template>
 
-        <a-form-item label="权限标识" name="permission" v-if="formData.menuType !== 0">
-          <a-input v-model:value="formData.permission" placeholder="如 sys:user:list" />
-        </a-form-item>
+        <!-- 图标列 -->
+        <template v-if="column.key === 'icon'">
+          <div v-if="record.icon" class="icon-preview-cell">
+            <component
+              v-if="getIconComponent(record.icon)"
+              :is="getIconComponent(record.icon)"
+              class="icon-preview"
+            />
+            <a-tooltip :title="record.icon">
+              <span class="icon-name">{{ record.icon }}</span>
+            </a-tooltip>
+          </div>
+          <span v-else class="text-muted">-</span>
+        </template>
 
-        <a-form-item label="排序" name="sort">
-          <a-input-number v-model:value="formData.sort" :min="0" style="width: 100%" placeholder="数值越小越靠前" />
-        </a-form-item>
+        <!-- 菜单类型列 -->
+        <template v-if="column.key === 'menuType'">
+          <a-tag :color="['blue', 'green', 'orange'][record.menuType]" class="type-tag">
+            {{ ['目录', '菜单', '按钮'][record.menuType] }}
+          </a-tag>
+        </template>
 
-        <a-form-item label="是否可见" name="visible" v-if="formData.menuType !== 2">
-          <a-switch
-            :checked="formData.visible === 1"
-            @change="(val: boolean) => (formData.visible = val ? 1 : 0)"
-            checked-children="显示"
-            un-checked-children="隐藏"
-          />
-        </a-form-item>
+        <!-- 路由路径列 -->
+        <template v-if="column.key === 'path'">
+          <a-tooltip v-if="record.path" :title="record.path">
+            <span class="ellipsis-text">{{ record.path }}</span>
+          </a-tooltip>
+          <span v-else class="text-muted">-</span>
+        </template>
 
-        <a-form-item label="状态" name="status">
-          <a-switch
-            :checked="formData.status === 1"
-            @change="(val: boolean) => (formData.status = val ? 1 : 0)"
-            checked-children="正常"
-            un-checked-children="禁用"
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        <!-- 组件路径列 -->
+        <template v-if="column.key === 'component'">
+          <a-tooltip v-if="record.component" :title="record.component">
+            <span class="ellipsis-text code-text">{{ record.component }}</span>
+          </a-tooltip>
+          <span v-else class="text-muted">-</span>
+        </template>
 
-    <!-- 图标选择器 Modal -->
-    <a-modal
-      v-model:open="iconPickerVisible"
-      title="选择图标"
-      :footer="null"
-      width="720px"
-      class="icon-picker-modal"
+        <!-- 权限标识列 -->
+        <template v-if="column.key === 'permission'">
+          <a-tooltip v-if="record.permission" :title="record.permission">
+            <a-tag color="purple" class="permission-tag">{{ record.permission }}</a-tag>
+          </a-tooltip>
+          <span v-else class="text-muted">-</span>
+        </template>
+
+        <!-- 状态列 -->
+        <template v-if="column.key === 'status'">
+          <StatusTag :value="record.status" />
+        </template>
+
+        <!-- 操作列 -->
+        <template v-if="column.key === 'action'">
+          <TableActions :actions="getMenuActions(record)" :record="record" />
+        </template>
+      </template>
+    </a-table>
+  </PageContainer>
+
+  <!-- 菜单表单 Modal -->
+  <a-modal
+    v-model:open="modalVisible"
+    :title="isEdit ? '编辑菜单' : '新增菜单'"
+    :confirm-loading="submitLoading"
+    @ok="handleSubmit"
+    @cancel="resetForm"
+    width="640px"
+    class="menu-modal"
+  >
+    <a-form
+      :model="formData"
+      :rules="formRules"
+      ref="formRef"
+      :label-col="{ span: 5 }"
+      :wrapper-col="{ span: 17 }"
+      class="menu-form"
     >
-      <div class="icon-picker-search">
-        <a-input
-          v-model:value="iconSearchText"
-          placeholder="搜索图标名称..."
+      <a-form-item label="菜单类型" name="menuType">
+        <a-radio-group v-model:value="formData.menuType" button-style="solid">
+          <a-radio-button :value="0">
+            <FolderOutlined /> 目录
+          </a-radio-button>
+          <a-radio-button :value="1">
+            <FileOutlined /> 菜单
+          </a-radio-button>
+          <a-radio-button :value="2">
+            <ApiOutlined /> 按钮
+          </a-radio-button>
+        </a-radio-group>
+      </a-form-item>
+
+      <a-form-item label="菜单标题" name="title">
+        <a-input v-model:value="formData.title" placeholder="请输入菜单标题" />
+      </a-form-item>
+
+      <a-form-item label="上级菜单" name="parentId">
+        <a-tree-select
+          v-model:value="formData.parentId"
+          :tree-data="flatMenuTree"
+          :field-names="{ label: 'title', value: 'id', children: 'children' }"
+          placeholder="请选择上级菜单（不选则为顶级）"
           allow-clear
-          size="large"
-        >
-          <template #prefix><SearchOutlined /></template>
-        </a-input>
-      </div>
-      <div class="icon-grid">
-        <div
-          v-for="iconName in filteredIcons"
-          :key="iconName"
-          class="icon-grid-item"
-          :class="{ 'icon-grid-item-selected': formData.icon === iconName }"
-          @click="selectIcon(iconName)"
-        >
-          <component :is="getIconComponent(iconName)" class="icon-grid-icon" />
-          <span class="icon-grid-name">{{ iconName.replace('Outlined', '') }}</span>
+          tree-default-expand-all
+          style="width: 100%"
+        />
+      </a-form-item>
+
+      <template v-if="formData.menuType !== 2">
+        <a-form-item label="路由名称" name="name">
+          <a-input v-model:value="formData.name" placeholder="请输入路由 name（唯一标识）" />
+        </a-form-item>
+        <a-form-item label="路由路径" name="path">
+          <a-input v-model:value="formData.path" placeholder="如 /system/user" />
+        </a-form-item>
+      </template>
+
+      <template v-if="formData.menuType === 1">
+        <a-form-item label="组件路径" name="component">
+          <a-input v-model:value="formData.component" placeholder="如 system/user/index（相对 views 目录，不含 .vue）" />
+        </a-form-item>
+      </template>
+
+      <!-- 图标选择器（目录和菜单显示） -->
+      <a-form-item label="菜单图标" name="icon" v-if="formData.menuType !== 2">
+        <div class="icon-selector-wrapper">
+          <div class="icon-input-row">
+            <div class="icon-current-preview">
+              <component
+                v-if="formData.icon && getIconComponent(formData.icon)"
+                :is="getIconComponent(formData.icon)"
+                class="icon-current"
+              />
+              <QuestionCircleOutlined v-else class="icon-current icon-placeholder" />
+            </div>
+            <a-input
+              v-model:value="formData.icon"
+              placeholder="请输入或选择图标名"
+              style="flex: 1"
+              allow-clear
+            />
+            <a-button type="default" @click="openIconPicker" class="icon-pick-btn">
+              <template #icon><AppstoreOutlined /></template>
+              选择图标
+            </a-button>
+          </div>
         </div>
+      </a-form-item>
+
+      <a-form-item label="权限标识" name="permission" v-if="formData.menuType !== 0">
+        <a-input v-model:value="formData.permission" placeholder="如 sys:user:list" />
+      </a-form-item>
+
+      <a-form-item label="排序" name="sort">
+        <a-input-number v-model:value="formData.sort" :min="0" style="width: 100%" placeholder="数值越小越靠前" />
+      </a-form-item>
+
+      <a-form-item label="是否可见" name="visible" v-if="formData.menuType !== 2">
+        <a-switch
+          :checked="formData.visible === 1"
+          @change="(val: boolean) => (formData.visible = val ? 1 : 0)"
+          checked-children="显示"
+          un-checked-children="隐藏"
+        />
+      </a-form-item>
+
+      <a-form-item label="状态" name="status">
+        <a-switch
+          :checked="formData.status === 1"
+          @change="(val: boolean) => (formData.status = val ? 1 : 0)"
+          checked-children="正常"
+          un-checked-children="禁用"
+        />
+      </a-form-item>
+    </a-form>
+  </a-modal>
+
+  <!-- 图标选择器 Modal -->
+  <a-modal
+    v-model:open="iconPickerVisible"
+    title="选择图标"
+    :footer="null"
+    width="720px"
+    class="icon-picker-modal"
+  >
+    <div class="icon-picker-search">
+      <a-input
+        v-model:value="iconSearchText"
+        placeholder="搜索图标名称..."
+        allow-clear
+        size="large"
+      >
+        <template #prefix><SearchOutlined /></template>
+      </a-input>
+    </div>
+    <div class="icon-grid">
+      <div
+        v-for="iconName in filteredIcons"
+        :key="iconName"
+        class="icon-grid-item"
+        :class="{ 'icon-grid-item-selected': formData.icon === iconName }"
+        @click="selectIcon(iconName)"
+      >
+        <component :is="getIconComponent(iconName)" class="icon-grid-icon" />
+        <span class="icon-grid-name">{{ iconName.replace('Outlined', '') }}</span>
       </div>
-      <div v-if="filteredIcons.length === 0" class="icon-empty">
-        <a-empty description="未找到匹配的图标" />
-      </div>
-    </a-modal>
-  </div>
+    </div>
+    <div v-if="filteredIcons.length === 0" class="icon-empty">
+      <a-empty description="未找到匹配的图标" />
+    </div>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -324,7 +276,6 @@ import type { FormInstance, Rule } from 'ant-design-vue/es'
 import * as Icons from '@ant-design/icons-vue'
 import {
   PlusOutlined,
-  PlusCircleOutlined,
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
@@ -339,6 +290,7 @@ import {
 } from '@ant-design/icons-vue'
 import { getMenuList, saveMenu, updateMenu, deleteMenu } from '@/api/menu'
 import type { MenuItem, MenuSaveParams } from '@/types/menu'
+import type { TableAction } from '@/components/TableActions/index.vue'
 
 // 获取图标组件
 function getIconComponent(iconName: string): Component | null {
@@ -455,6 +407,27 @@ async function loadData() {
   }
 }
 
+// 操作列按钮配置（菜单管理）
+function getMenuActions(record: MenuItem): TableAction[] {
+  return [
+    {
+      label: '新增',
+      onClick: (r) => openAddModal(r.id),
+      hidden: record.menuType === 2
+    },
+    {
+      label: '编辑',
+      onClick: (r) => openEditModal(r)
+    },
+    {
+      label: '删除',
+      danger: true,
+      confirm: '确定要删除该菜单吗？',
+      onClick: (r) => handleDelete(r.id)
+    }
+  ]
+}
+
 // 表单
 const modalVisible = ref(false)
 const isEdit = ref(false)
@@ -552,61 +525,29 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-/* 页面布局 */
-.menu-page {
-  padding: 0;
-}
-
-/* 主卡片 */
-.main-card {
-  margin: 0 0 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
-
-/* 操作栏 */
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
+/* 工具栏 */
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-/* 表格 */
-.menu-table :deep(.ant-table-thead > tr > th) {
-  background: #fafafa;
-  font-weight: 600;
-  color: #595959;
-}
-
-.menu-table :deep(.ant-table-row:hover > td) {
-  background: #f0f7ff !important;
+  gap: var(--spacing-sm);
 }
 
 /* 菜单标题单元格 */
 .menu-title-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   font-weight: 500;
 }
 
 .menu-title-icon {
-  color: #1677ff;
+  color: var(--primary-color);
   font-size: 15px;
 }
 
@@ -619,7 +560,7 @@ onMounted(() => loadData())
 
 .icon-preview {
   font-size: 16px;
-  color: #1677ff;
+  color: var(--primary-color);
 }
 
 .icon-name {
@@ -670,29 +611,6 @@ onMounted(() => loadData())
   color: #bfbfbf;
 }
 
-/* 操作按钮 */
-.action-btn {
-  padding: 0 4px;
-  height: auto;
-  font-size: 12px;
-}
-
-.add-btn {
-  color: #52c41a;
-}
-
-.add-btn:hover {
-  color: #389e0d !important;
-}
-
-.edit-btn {
-  color: #1677ff;
-}
-
-.edit-btn:hover {
-  color: #0958d9 !important;
-}
-
 /* 表单样式 */
 .menu-form {
   padding: 8px 0;
@@ -706,7 +624,7 @@ onMounted(() => loadData())
 .icon-input-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .icon-current-preview {
@@ -723,7 +641,7 @@ onMounted(() => loadData())
 
 .icon-current {
   font-size: 16px;
-  color: #1677ff;
+  color: var(--primary-color);
 }
 
 .icon-placeholder {
@@ -737,13 +655,13 @@ onMounted(() => loadData())
 
 /* 图标选择器面板 */
 .icon-picker-search {
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-md);
 }
 
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
+  gap: var(--spacing-sm);
   max-height: 420px;
   overflow-y: auto;
   padding: 4px;
@@ -768,12 +686,12 @@ onMounted(() => loadData())
   background: #e6f4ff;
   border-color: #91caff;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .icon-grid-item-selected {
   background: #e6f4ff !important;
-  border-color: #1677ff !important;
+  border-color: var(--primary-color) !important;
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
 }
 
@@ -784,11 +702,11 @@ onMounted(() => loadData())
 }
 
 .icon-grid-item:hover .icon-grid-icon {
-  color: #1677ff;
+  color: var(--primary-color);
 }
 
 .icon-grid-item-selected .icon-grid-icon {
-  color: #1677ff !important;
+  color: var(--primary-color) !important;
 }
 
 .icon-grid-name {

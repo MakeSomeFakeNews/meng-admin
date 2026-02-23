@@ -1,7 +1,8 @@
 <template>
-  <div>
-    <a-card :bordered="false" style="margin-bottom: 16px; border-radius: 8px">
-      <a-form layout="inline" :model="queryParams">
+  <PageContainer>
+    <!-- 搜索区域 -->
+    <template #search>
+      <SearchCard :loading="loading" @search="loadData" @reset="resetQuery">
         <a-form-item label="用户名">
           <a-input v-model:value="queryParams.username" placeholder="请输入用户名" allow-clear />
         </a-form-item>
@@ -11,38 +12,41 @@
             <a-select-option :value="0">失败</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="loadData" :loading="loading"><SearchOutlined /> 搜索</a-button>
-            <a-button @click="resetQuery"><ReloadOutlined /> 重置</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+      </SearchCard>
+    </template>
 
-    <a-card :bordered="false" style="border-radius: 8px">
-      <div style="margin-bottom: 16px">
+    <!-- 工具栏 -->
+    <template #toolbar>
+      <div>
         <a-popconfirm title="确定清空所有登录日志吗？" @confirm="handleClear">
           <a-button danger><DeleteOutlined /> 清空</a-button>
         </a-popconfirm>
       </div>
+    </template>
 
-      <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="pagination" row-key="id" @change="handleTableChange">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === 1 ? 'success' : 'error'">{{ record.status === 1 ? '成功' : '失败' }}</a-tag>
-          </template>
+    <!-- 表格 -->
+    <a-table
+      :columns="columns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="pagination"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <StatusTag :value="record.status" type="result" active-text="成功" inactive-text="失败" />
         </template>
-      </a-table>
-    </a-card>
-  </div>
+      </template>
+    </a-table>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { TablePaginationConfig } from 'ant-design-vue/es'
-import { SearchOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { getLoginLogPage, clearLoginLog } from '@/api/log'
 import type { LoginLog, LoginLogQueryParams } from '@/types/log'
 

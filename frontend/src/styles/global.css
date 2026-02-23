@@ -1,0 +1,136 @@
+/* ========================================
+   全局基础样式
+   ======================================== */
+
+/* 导入变量 */
+@import './variables.css';
+
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---- 基础布局 ---- */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--font-size-base);
+  color: var(--text-color);
+  background-color: var(--bg-color-layout);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- 页面容器 ---- */
+.page-container {
+  padding: var(--page-padding);
+  min-height: 100%;
+}
+
+/* ---- 卡片间距 ---- */
+.search-card {
+  margin-bottom: var(--card-margin);
+  border-radius: var(--border-radius-base);
+}
+
+.table-card {
+  border-radius: var(--border-radius-base);
+}
+
+/* ---- 工具栏 ---- */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ---- 搜索表单 ---- */
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: flex-end;
+}
+
+/* ---- 表格操作列 ---- */
+.table-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- 状态标签 ---- */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- 对话框表单 ---- */
+.modal-form .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- 内容居中容器 ---- */
+.content-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ---- 文本辅助类 ---- */
+.text-primary { color: var(--primary-color); }
+.text-success { color: var(--success-color); }
+.text-warning { color: var(--warning-color); }
+.text-error { color: var(--error-color); }
+.text-secondary { color: var(--text-color-secondary); }
+.text-tertiary { color: var(--text-color-tertiary); }
+.text-disabled { color: var(--text-color-disabled); }
+
+/* ---- 间距辅助类 ---- */
+.mb-xs { margin-bottom: var(--spacing-xs); }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mt-xs { margin-top: var(--spacing-xs); }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+
+/* ---- 滚动条美化 ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+}

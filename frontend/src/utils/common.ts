@@ -1,6 +1,7 @@
 /**
  * 通用工具函数
  */
+import { StatusEnum } from '@/types/enums'
 
 /**
  * 格式化日期时间
@@ -23,14 +24,14 @@ export function formatDateTime(dateStr: string | null | undefined): string {
  * 获取状态标签类型（用于 a-tag color）
  */
 export function getStatusColor(status: number): string {
-  return status === 1 ? 'success' : 'error'
+  return status === StatusEnum.ENABLED ? 'success' : 'error'
 }
 
 /**
  * 获取状态文本
  */
 export function getStatusText(status: number): string {
-  return status === 1 ? '正常' : '禁用'
+  return status === StatusEnum.ENABLED ? '正常' : '禁用'
 }
 
 /**

@@ -1,3 +1,5 @@
+import type { MenuTypeEnum } from './enums'
+
 /**
  * 菜单信息（VO）
  */
@@ -9,7 +11,7 @@ export interface MenuItem {
   path: string
   component: string
   icon: string
-  menuType: number  // 0目录 1菜单 2按钮
+  menuType: number  // MenuTypeEnum.CATALOG=0 目录 | MenuTypeEnum.MENU=1 菜单 | MenuTypeEnum.BUTTON=2 按钮
   permission: string
   sort: number
   visible: number

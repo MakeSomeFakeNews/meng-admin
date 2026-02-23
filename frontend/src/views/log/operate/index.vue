@@ -1,7 +1,8 @@
 <template>
-  <div>
-    <a-card :bordered="false" style="margin-bottom: 16px; border-radius: 8px">
-      <a-form layout="inline" :model="queryParams">
+  <PageContainer>
+    <!-- 搜索区域 -->
+    <template #search>
+      <SearchCard :loading="loading" @search="loadData" @reset="resetQuery">
         <a-form-item label="模块">
           <a-input v-model:value="queryParams.module" placeholder="请输入模块名" allow-clear />
         </a-form-item>
@@ -14,69 +15,73 @@
             <a-select-option :value="0">异常</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="loadData" :loading="loading"><SearchOutlined /> 搜索</a-button>
-            <a-button @click="resetQuery"><ReloadOutlined /> 重置</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+      </SearchCard>
+    </template>
 
-    <a-card :bordered="false" style="border-radius: 8px">
-      <div style="margin-bottom: 16px">
+    <!-- 工具栏 -->
+    <template #toolbar>
+      <div>
         <a-popconfirm title="确定清空所有操作日志吗？" @confirm="handleClear">
           <a-button danger><DeleteOutlined /> 清空</a-button>
         </a-popconfirm>
       </div>
+    </template>
 
-      <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="pagination" row-key="id" @change="handleTableChange">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === 1 ? 'success' : 'error'">{{ record.status === 1 ? '正常' : '异常' }}</a-tag>
-          </template>
-          <template v-if="column.key === 'duration'">
-            <span>{{ record.duration }}ms</span>
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="viewDetail(record)">详情</a-button>
-          </template>
+    <!-- 表格 -->
+    <a-table
+      :columns="columns"
+      :data-source="tableData"
+      :loading="loading"
+      :pagination="pagination"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <StatusTag :value="record.status" type="result" active-text="成功" inactive-text="失败" />
         </template>
-      </a-table>
-    </a-card>
+        <template v-if="column.key === 'duration'">
+          <span>{{ record.duration }}ms</span>
+        </template>
+        <template v-if="column.key === 'action'">
+          <TableActions :actions="operateActions" :record="record" />
+        </template>
+      </template>
+    </a-table>
+  </PageContainer>
 
-    <!-- 详情 Modal -->
-    <a-modal v-model:open="detailVisible" title="操作日志详情" :footer="null" width="700px">
-      <a-descriptions :column="2" bordered size="small" v-if="currentRecord">
-        <a-descriptions-item label="模块">{{ currentRecord.module }}</a-descriptions-item>
-        <a-descriptions-item label="操作">{{ currentRecord.action }}</a-descriptions-item>
-        <a-descriptions-item label="操作人">{{ currentRecord.operatorName }}</a-descriptions-item>
-        <a-descriptions-item label="IP">{{ currentRecord.ip }}</a-descriptions-item>
-        <a-descriptions-item label="IP归属地">{{ currentRecord.ipLocation }}</a-descriptions-item>
-        <a-descriptions-item label="耗时">{{ currentRecord.duration }}ms</a-descriptions-item>
-        <a-descriptions-item label="请求URL" :span="2">{{ currentRecord.requestUrl }}</a-descriptions-item>
-        <a-descriptions-item label="请求参数" :span="2">
-          <pre style="white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto">{{ currentRecord.requestParams }}</pre>
-        </a-descriptions-item>
-        <a-descriptions-item label="响应结果" :span="2" v-if="currentRecord.status === 1">
-          <pre style="white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto">{{ currentRecord.responseResult }}</pre>
-        </a-descriptions-item>
-        <a-descriptions-item label="错误信息" :span="2" v-if="currentRecord.status === 0">
-          <span style="color: red">{{ currentRecord.errorMsg }}</span>
-        </a-descriptions-item>
-        <a-descriptions-item label="操作时间" :span="2">{{ currentRecord.createTime }}</a-descriptions-item>
-      </a-descriptions>
-    </a-modal>
-  </div>
+  <!-- 详情 Modal -->
+  <a-modal v-model:open="detailVisible" title="操作日志详情" :footer="null" width="700px">
+    <a-descriptions :column="2" bordered size="small" v-if="currentRecord">
+      <a-descriptions-item label="模块">{{ currentRecord.module }}</a-descriptions-item>
+      <a-descriptions-item label="操作">{{ currentRecord.action }}</a-descriptions-item>
+      <a-descriptions-item label="操作人">{{ currentRecord.operatorName }}</a-descriptions-item>
+      <a-descriptions-item label="IP">{{ currentRecord.ip }}</a-descriptions-item>
+      <a-descriptions-item label="IP归属地">{{ currentRecord.ipLocation }}</a-descriptions-item>
+      <a-descriptions-item label="耗时">{{ currentRecord.duration }}ms</a-descriptions-item>
+      <a-descriptions-item label="请求URL" :span="2">{{ currentRecord.requestUrl }}</a-descriptions-item>
+      <a-descriptions-item label="请求参数" :span="2">
+        <pre class="detail-pre">{{ currentRecord.requestParams }}</pre>
+      </a-descriptions-item>
+      <a-descriptions-item label="响应结果" :span="2" v-if="currentRecord.status === 1">
+        <pre class="detail-pre">{{ currentRecord.responseResult }}</pre>
+      </a-descriptions-item>
+      <a-descriptions-item label="错误信息" :span="2" v-if="currentRecord.status === 0">
+        <span class="error-text">{{ currentRecord.errorMsg }}</span>
+      </a-descriptions-item>
+      <a-descriptions-item label="操作时间" :span="2">{{ currentRecord.createTime }}</a-descriptions-item>
+    </a-descriptions>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { TablePaginationConfig } from 'ant-design-vue/es'
-import { SearchOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { getOperateLogPage, clearOperateLog } from '@/api/log'
 import type { OperateLog, OperateLogQueryParams } from '@/types/log'
+import type { TableAction } from '@/components/TableActions/index.vue'
 
 const queryParams = reactive<OperateLogQueryParams>({ module: '', operatorName: '', status: null, current: 1, size: 10 })
 const loading = ref(false)
@@ -134,5 +139,25 @@ function viewDetail(record: OperateLog) {
   detailVisible.value = true
 }
 
+const operateActions: TableAction[] = [
+  {
+    label: '详情',
+    onClick: (record) => viewDetail(record)
+  }
+]
+
 onMounted(() => loadData())
 </script>
+
+<style scoped>
+.detail-pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.error-text {
+  color: var(--error-color);
+}
+</style>
