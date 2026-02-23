@@ -61,13 +61,14 @@
               <a-button type="link" size="small" v-permission="'sys:user:reset-pwd'" @click="openResetPwdModal(record)">
                 重置密码
               </a-button>
-              <a-popconfirm
-                title="确定删除该用户吗？"
-                v-permission="'sys:user:delete'"
-                @confirm="handleDelete(record.id)"
-              >
-                <a-button type="link" size="small" danger>删除</a-button>
-              </a-popconfirm>
+              <span v-permission="'sys:user:delete'">
+                <a-popconfirm
+                  title="确定删除该用户吗？"
+                  @confirm="handleDelete(record.id)"
+                >
+                  <a-button type="link" size="small" danger>删除</a-button>
+                </a-popconfirm>
+              </span>
             </a-space>
           </template>
         </template>
