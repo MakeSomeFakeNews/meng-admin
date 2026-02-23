@@ -28,9 +28,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function login(params: LoginParams): Promise<LoginResult> {
     const result = await loginApi(params)
-    const tokenStr = `${result.tokenName}:${result.tokenValue}`
-    token.value = tokenStr
-    localStorage.setItem('token', tokenStr)
+    token.value = result.tokenValue
+    localStorage.setItem('token', result.tokenValue)
     return result
   }
 
