@@ -1,77 +1,107 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 
-/**
- * 静态路由（不需要权限）
- */
+// 静态路由（无需认证）
 const staticRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
-    meta: { title: '登录', requiresAuth: false }
+    meta: { title: '登录' }
   },
   {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
+    path: '/404',
+    name: '404',
     component: () => import('@/views/error/404.vue'),
-    meta: { title: '404', requiresAuth: false }
+    meta: { title: '页面不存在' }
+  },
+  {
+    path: '/403',
+    name: '403',
+    component: () => import('@/views/error/403.vue'),
+    meta: { title: '权限不足' }
+  },
+  {
+    // 主布局路由（动态子路由会注册到此下）
+    path: '/',
+    name: 'Layout',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: { title: '首页', icon: 'HomeOutlined' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/index.vue'),
+        meta: { title: '个人中心' }
+      }
+    ]
+  },
+  // 兜底路由
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
   }
 ]
 
-/**
- * 动态路由基础布局（认证后挂载）
- */
-export const layoutRoute: RouteRecordRaw = {
-  path: '/',
-  name: 'Layout',
-  component: () => import('@/views/layout/index.vue'),
-  redirect: '/dashboard',
-  meta: { requiresAuth: true },
-  children: [
-    {
-      path: 'dashboard',
-      name: 'Dashboard',
-      component: () => import('@/views/dashboard/index.vue'),
-      meta: { title: '首页', icon: 'HomeOutlined', requiresAuth: true }
-    }
-  ]
-}
-
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [...staticRoutes, layoutRoute],
+  history: createWebHistory(),
+  routes: staticRoutes,
   scrollBehavior: () => ({ top: 0 })
 })
 
-/**
- * 全局路由守卫：鉴权 + 加载用户信息
- */
+// 路由白名单（无需认证）
+const whiteList = ['/login', '/404', '/403']
+
 router.beforeEach(async (to, _from, next) => {
+  // 动态设置 document.title
+  document.title = to.meta?.title ? `${to.meta.title} - 后台管理系统` : '后台管理系统'
+
+  const token = localStorage.getItem('token')
+
+  // 白名单路由直接放行
+  if (whiteList.includes(to.path)) {
+    // 已登录访问登录页，跳转首页
+    if (token && to.path === '/login') {
+      next('/')
+    } else {
+      next()
+    }
+    return
+  }
+
+  // 未登录跳转登录页
+  if (!token) {
+    next(`/login?redirect=${to.path}`)
+    return
+  }
+
+  // 已登录，检查是否需要加载用户信息
+  const { useAuthStore } = await import('@/stores/auth')
+  const { useMenuStore } = await import('@/stores/menu')
   const authStore = useAuthStore()
-  const requiresAuth = to.meta.requiresAuth !== false
+  const menuStore = useMenuStore()
 
-  if (!requiresAuth) {
-    // 已登录时访问登录页，重定向到首页
-    if (to.path === '/login' && authStore.isLoggedIn) {
-      return next({ path: '/' })
-    }
-    return next()
-  }
-
-  // 未登录，跳转登录页
-  if (!authStore.isLoggedIn) {
-    return next({ path: '/login', query: { redirect: to.fullPath } })
-  }
-
-  // 已登录但尚未加载用户信息
-  if (!authStore.userInfo) {
+  if (!menuStore.routesLoaded) {
     try {
+      // 加载用户信息和菜单
       await authStore.fetchUserInfo()
+      // 生成并注册动态路由
+      menuStore.generateRoutes(authStore.menus)
+      // 重新导航到目标路由（路由刚注册需要重新跳转）
+      next({ ...to, replace: true })
     } catch {
+      // 加载失败（Token 失效），清理并跳转登录
       authStore.reset()
-      return next({ path: '/login' })
+      menuStore.reset()
+      next('/login')
     }
+    return
   }
 
   next()
