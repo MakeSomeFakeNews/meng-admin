@@ -25,19 +25,33 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // MyBatis Plus
+    implementation 'com.baomidou:mybatis-plus-spring-boot4-starter:3.5.15'
+    implementation 'com.baomidou:mybatis-plus-jsqlparser'
+
+    // Sa-Token
+    implementation 'cn.dev33:sa-token-spring-boot-starter:1.44.0'
+    implementation 'cn.dev33:sa-token-redis-jackson:1.44.0'
+    implementation 'org.apache.commons:commons-pool2'
+
+    // 数据库
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // 工具库
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-data-redis-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-jdbc-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    implementation 'cn.hutool:hutool-all:5.8.40'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    implementation 'org.lionsoul:ip2region:2.7.0'
+
+    // 测试
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

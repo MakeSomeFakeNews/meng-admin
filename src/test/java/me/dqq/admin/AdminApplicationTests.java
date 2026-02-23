@@ -1,13 +1,12 @@
-package me.dqq.meng;
+package me.dqq.admin;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MengAdminApplicationTests {
+class AdminApplicationTests {
 
     @Test
     void contextLoads() {
     }
-
 }
